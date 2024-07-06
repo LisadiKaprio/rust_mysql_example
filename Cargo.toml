@@ -1,0 +1,19 @@
+[package]
+name = "rust_mysql_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"]}
+sqlx = { version = "0.7", features = [ "mysql", "runtime-tokio", "tls-rustls" ] }
+dotenv = "0.15.0"
+strum = "0.26"
+strum_macros = "0.26"
+
+[[bin]]
+name = "setup_db"
+path = "src/setup_db.rs"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
