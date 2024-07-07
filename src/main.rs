@@ -1,8 +1,12 @@
-use sqlx::{migrate, mysql::*, query};
+use sqlx::{migrate, mysql::*, query, Row};
 use std::env;
 use std::error::Error;
 use dotenv::dotenv;
 use strum_macros::{EnumString, AsRefStr};
+use std::io;
+use std::str::FromStr;
+mod commands;
+use commands::*;
 
 #[derive(Debug, AsRefStr, EnumString)]
 enum Season {
@@ -31,7 +35,7 @@ impl Character {
         }
     }
 
-    async fn add_to_database(&self, pool: &MySqlPool) -> Result<(), Box<dyn Error>> {
+    async fn add_to_database(&self, pool: &MySqlPool, notify_success: bool, notify_error: bool) -> Result<(), Box<dyn Error>> {
         let creation_query = "INSERT INTO characters (name, birthday_season, birthday_day, is_bachelor, best_gift) VALUES (?, ?, ?, ?, ?)";
     
         let query_result = query(creation_query).bind(&self.name)
@@ -44,18 +48,51 @@ impl Character {
     
         match query_result {
             Ok(_) => {
-                let message = format!("{} was successfully added to the database! :)", &self.name);
-                print_aesthetic_message(message);
+                if notify_success {
+                    let message = format!("{} was successfully added to the database! :)", &self.name);
+                    print_aesthetic_message(message);
+                }
                 Ok(())
             },
             Err(e) => {
-                let message = format!("An error occured when adding character {}! {}", &self.name, e.to_string());
-                print_aesthetic_message(message);
+                if notify_error {
+                    let message = format!("An error occured when adding character {}! {}", &self.name, e.to_string());
+                    print_aesthetic_message(message);
+                }
                 Ok(())
             }
         }    
     }
+
+    fn print_info(&self) {
+        println!("•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•");
+        println!(" ");
+        println!("{}' birthday: {} {}", &self.name, self.birthday_season.as_ref(), &self.birthday_day);
+        println!("{}'s favourite gift: {}", &self.name, &self.best_gift);
+        let can_get_married = if self.is_bachelor { "can get married to the player! ❤" } else { "can NOT get married to the player! 💔" };
+        println!("{} {}", &self.name, can_get_married);
+        println!(" ");
+        println!("•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•");
+    }
+
 }
+
+    // add character by user input
+    // user should type: "add leah spring 3 pizza true"
+
+    // read all characters
+    // user should type: "read all"
+
+    // read character by name
+    // user should type: "read abigail"
+    // output will be:  Abigail's birthday: Spring 27
+    //                  Abigail's favourite gift: Amethyst
+    //                  Abigail can get married to the player!
+
+
+    // edit character by name
+    // user should type: "change abigail best_gift pizza"
+    // UPDATE characters SET ? = ? WHERE name = ? (bind parameter, updated value, name)
 
 fn print_aesthetic_message (message: String) {
     println!("•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•");
@@ -75,13 +112,7 @@ async fn connect_to_db() -> Result<MySqlPool, sqlx::Error>{
     MySqlPool::connect(&full_db_path).await
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>>{
-    let pool = connect_to_db().await?;
-    migrate!("./migrations").run(&pool).await?;
-
-    println!("Following seasons are available: {}, {}, {} and {}.", Season::Spring.as_ref(), Season::Summer.as_ref(), Season::Fall.as_ref(), Season::Winter.as_ref());
-
+async fn setup_initial_values(pool: &MySqlPool) -> Result<(), Box<dyn Error>>{
     let existing_characters: Vec<Character> = vec![
         Character {
             name: "Abigail".to_string(),
@@ -121,8 +152,36 @@ async fn main() -> Result<(), Box<dyn Error>>{
     ];
 
     for character in &existing_characters {
-        character.add_to_database(&pool).await?;
+        character.add_to_database(pool, false, false).await?;
     };
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>>{
+    let pool = connect_to_db().await?;
+    migrate!("./migrations").run(&pool).await?;
+    setup_initial_values(&pool).await?;
+
+    loop {
+        println!("Type your command here:");
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read input!");
+        
+        let parts: Vec<_> = input.trim().split_whitespace().collect();
+
+        if parts.is_empty() { continue };
+
+        let command = parts[0];
+        let arguments = parts[1..].to_vec();
+
+        let executed_command = Commands::execute_command(&pool, command, arguments).await.unwrap();
+        if executed_command == Commands::Command::Quit {
+            break;
+        }
+    }
+
 
     Ok(())
 }
