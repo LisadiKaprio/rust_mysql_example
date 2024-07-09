@@ -1,18 +1,21 @@
-use sqlx::{migrate, mysql::*, query, Row};
+use sqlx::{migrate, mysql::*, query};
 use std::env;
 use std::error::Error;
 use dotenv::dotenv;
-use strum_macros::{EnumString, AsRefStr};
+use strum_macros::{EnumString, AsRefStr, IntoStaticStr};
 use std::io;
-use std::str::FromStr;
 mod commands;
-use commands::*;
+use commands::terminal_commands::*;
 
-#[derive(Debug, AsRefStr, EnumString)]
+#[derive(Debug, IntoStaticStr, AsRefStr, EnumString)]
 enum Season {
+    #[strum(ascii_case_insensitive)]
     Spring,
+    #[strum(ascii_case_insensitive)]
     Summer,
+    #[strum(ascii_case_insensitive)]
     Fall,
+    #[strum(ascii_case_insensitive)]
     Winter
 }
 
@@ -25,7 +28,7 @@ struct Character {
 }
 
 impl Character {
-    fn new(name: String, birthday_season: Season, birthday_day: u8, is_bachelor: bool, best_gift: String) -> Character {
+    fn _new(name: String, birthday_season: Season, birthday_day: u8, is_bachelor: bool, best_gift: String) -> Character {
         Character {
             name, 
             birthday_season,
@@ -174,14 +177,18 @@ async fn main() -> Result<(), Box<dyn Error>>{
         if parts.is_empty() { continue };
 
         let command = parts[0];
-        let arguments = parts[1..].to_vec();
+        let arguments;
+        if parts.len() <= 1 {
+            arguments = vec![];
+        } else {
+            arguments = parts[1..].to_vec();
+        }
 
-        let executed_command = Commands::execute_command(&pool, command, arguments).await.unwrap();
-        if executed_command == Commands::Command::Quit {
+        let executed_command = execute_command(&pool, command, arguments).await;
+        if let Ok(Command::Quit) = executed_command {
             break;
         }
     }
-
 
     Ok(())
 }

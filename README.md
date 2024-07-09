@@ -27,3 +27,40 @@ To run this project, you need to have Rust and MySQL installed on your machine.
     ```console
     cargo run --bin main
     ```
+
+## Usage
+
+The application is used to manage a database of Stardew Valley characters. The following commands are available:
+
+- Add a new character to the database:
+    ```console
+    add <name> <birthday_season> <birthday_day> <is_bachelor> <best_gift>
+    ```
+     Example: 
+    ```console
+    add abigail fall 13 true amethyst
+    ```
+- Reads a character from the database:
+    ```console
+    read <character_name>
+    ```
+    Example: 
+    ```console
+    read abigail
+    ```
+- Read all the characters from the database:
+    ```console
+    read all
+    ```
+-  Change a field of a character in the database:
+    ```console
+    change <character_name> <field_to_change> <new_value>
+    ```
+    Example: 
+    ```console
+    change abigail best_gift pizza
+    ```
+- Exit the application:
+    ```console
+    quit
+    ``` 
