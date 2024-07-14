@@ -4,7 +4,7 @@ A simple Rust application that uses SQLx to interact with a MySQL database.
 
 More specifically, it manages a database of Stardew Valley characters (for the sake of an example). Each character has a name, a birthday, a favourite gift item and whether or not they're available for marriage.
 
-You can read and write new characters in the database using terminal commands (todo).
+You can read and write new characters in the database using terminal commands.
 
 ## Installation
 
@@ -38,7 +38,7 @@ The application is used to manage a database of Stardew Valley characters. The f
     ```
      Example: 
     ```console
-    add abigail fall 13 true amethyst
+    add Sebastian spring 10 true Frozen Tear
     ```
 - Reads a character from the database:
     ```console
