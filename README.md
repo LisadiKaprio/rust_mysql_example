@@ -8,11 +8,11 @@ You can read and write new characters in the database using terminal commands (t
 
 ## Installation
 
-To run this project, you need to have Rust and MySQL installed on your machine.
+To run this project, you need to have Rust and MySQL / MariaDB installed on your machine.
 
 1. [Install Rust.](https://www.rust-lang.org/tools/install)
 
-2. [Install MySQL.](https://dev.mysql.com/doc/refman/8.0/en/installing.html)
+2. [Install MySQL](https://dev.mysql.com/doc/refman/8.0/en/installing.html) or [Install MariaDB](https://mariadb.com/kb/en/getting-installing-and-upgrading-mariadb/)
 
 3. Copy the already existing `.env.example` file in the root folder and rename it to `.env`. Change the credentials in the first line to be the ones that you have previously set up in your MySQL environment.
 
