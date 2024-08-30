@@ -130,10 +130,10 @@ pub mod terminal_commands {
                 let character = convert_row_to_character(existing_row).await;
                 character.print_info();
             }
-            None => print_aesthetic_message(format!(
+            None => print_aesthetic_message(vec![format!(
                 "Sorry, I can't find {} in the database!",
                 &character_name
-            )),
+            )]),
         }
 
         Ok(())
@@ -155,25 +155,22 @@ pub mod terminal_commands {
         let name = arguments[0].to_string();
 
         let birthday_season_result = string_to_season(arguments[1]);
-        let birthday_season: Season;
-        match birthday_season_result {
-            Some(s) => birthday_season = s,
+        let birthday_season = match birthday_season_result {
+            Some(s) => s,
             None => return Ok(()),
-        }
+        };
 
         let birthday_day_result = string_to_day(arguments[2]);
-        let birthday_day: u8;
-        match birthday_day_result {
-            Some(d) => birthday_day = d,
+        let birthday_day: u8 = match birthday_day_result {
+            Some(d) => d,
             None => return Ok(()),
-        }
+        };
 
         let is_bachelor_result = string_to_bachelor_bool(arguments[3]);
-        let is_bachelor: bool;
-        match is_bachelor_result {
-            Some(b) => is_bachelor = b,
+        let is_bachelor: bool = match is_bachelor_result {
+            Some(b) => b,
             None => return Ok(()),
-        }
+        };
 
         let best_gift = arguments[4..].join(" ");
 
@@ -204,15 +201,14 @@ pub mod terminal_commands {
         let character_name = arguments[0].to_string();
 
         let value_name_result = DbValue::from_str(&arguments[1].to_lowercase());
-        let value_name;
-        match value_name_result {
-            Ok(v) => value_name = v,
+        let value_name = match value_name_result {
+            Ok(v) => v,
             Err(_) => {
                 println!("Couldn't recognize value name you typed!");
                 println!("The following value names are available: name, birthday_season, birthday_day, is_bachelor, best_gift");
                 return Ok(());
             }
-        }
+        };
 
         let change_query: query::Query<MySql, MySqlArguments>;
         let query_string;
@@ -272,18 +268,21 @@ pub mod terminal_commands {
         let result = change_query.execute(pool).await;
         match result {
             Ok(_) => {
-                print_aesthetic_message("✅ The change took place! Try the command 'read' with the character's name to check out your changes.".to_string());
+                print_aesthetic_message(vec!["✅ The change took place! Try the command 'read' with the character's name to check out your changes."]);
                 Ok(())
             }
             Err(_e) if matches!(sqlx::Error::RowNotFound, _e) => {
-                print_aesthetic_message(format!(
+                print_aesthetic_message(vec![format!(
                     "Can't find character with the name '{}' in the database!",
                     &character_name
-                ));
+                )]);
                 Ok(())
             }
             Err(e) => {
-                print_aesthetic_message(format!("{}", e));
+                print_aesthetic_message(vec![
+                    "Error happened when trying to change character in database!",
+                    &format!("{e}"),
+                ]);
                 Ok(())
             }
         }

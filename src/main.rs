@@ -54,9 +54,9 @@ impl Character {
 
         let query_result = query(creation_query)
             .bind(&self.name)
-            .bind(&self.birthday_season.as_ref())
-            .bind(&self.birthday_day)
-            .bind(&self.is_bachelor)
+            .bind(self.birthday_season.as_ref())
+            .bind(self.birthday_day)
+            .bind(self.is_bachelor)
             .bind(&self.best_gift)
             .execute(pool)
             .await;
@@ -64,20 +64,20 @@ impl Character {
         match query_result {
             Ok(_) => {
                 if notify_success {
-                    let message =
-                        format!("{} was successfully added to the database! :)", &self.name);
-                    print_aesthetic_message(message);
+                    print_aesthetic_message(vec![format!(
+                        "{} was successfully added to the database! :)",
+                        &self.name
+                    )]);
                 }
                 Ok(())
             }
             Err(e) => {
                 if notify_error {
-                    let message = format!(
+                    print_aesthetic_message(vec![format!(
                         "An error occured when adding character {}! {}",
                         &self.name,
                         e.to_string()
-                    );
-                    print_aesthetic_message(message);
+                    )]);
                 }
                 Ok(())
             }
@@ -85,23 +85,27 @@ impl Character {
     }
 
     fn print_info(&self) {
-        println!("•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•");
-        println!(" ");
-        println!(
+        let mut messages = Vec::new();
+        messages.push(format!(
             "{}' birthday: {} {}",
             &self.name,
             self.birthday_season.as_ref(),
             &self.birthday_day
-        );
-        println!("{}'s favourite gift: {}", &self.name, &self.best_gift);
+        ));
+
+        messages.push(format!(
+            "{}'s favourite gift: {}",
+            &self.name, &self.best_gift
+        ));
+
         let can_get_married = if self.is_bachelor {
             "can get married to the player! ❤"
         } else {
             "can NOT get married to the player! 💔"
         };
-        println!("{} {}", &self.name, can_get_married);
-        println!(" ");
-        println!("•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•");
+        messages.push(format!("{} {}", &self.name, can_get_married));
+
+        print_aesthetic_message(messages);
     }
 }
 
@@ -121,18 +125,19 @@ impl Character {
 // user should type: "change abigail best_gift pizza"
 // UPDATE characters SET ? = ? WHERE name = ? (bind parameter, updated value, name)
 
-fn print_aesthetic_message(message: String) {
+fn print_aesthetic_message(messages: Vec<impl Into<String>>) {
     println!("•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•");
     println!(" ");
-    println!("{}", message);
+    for message in messages {
+        println!("{}", message.into());
+    }
     println!(" ");
     println!("•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•°•");
 }
 
 async fn connect_to_db() -> Result<MySqlPool, sqlx::Error> {
     dotenv().ok();
-    let url =
-        env::var("ROOT_DATABASE_URL").expect("ROOT_DATABASE_URL must be set in your .env file");
+    // let url = env::var("ROOT_DATABASE_URL").expect("ROOT_DATABASE_URL must be set in your .env file");
 
     let db_protocol = env::var("DB_PROTOCOL").expect("DB_PROTOCOL must be set in your .env file");
     let db_user = env::var("DB_USER").expect("DB_USER must be set in your .env file");
@@ -209,19 +214,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .read_line(&mut input)
             .expect("Failed to read input!");
 
-        let parts: Vec<_> = input.trim().split_whitespace().collect();
+        let parts: Vec<_> = input.split_whitespace().collect();
 
         if parts.is_empty() {
             continue;
         };
 
         let command = parts[0];
-        let arguments;
-        if parts.len() <= 1 {
-            arguments = vec![];
+        let arguments = if parts.len() <= 1 {
+            vec![]
         } else {
-            arguments = parts[1..].to_vec();
-        }
+            parts[1..].to_vec()
+        };
 
         let executed_command = execute_command(&pool, command, arguments).await;
         if let Ok(Command::Quit) = executed_command {
